@@ -30,11 +30,6 @@
 #define foam_max_address 0x0800780c
 #define flash_pto_address 0x08007810
 
-#define set_low_water_led 	GPIO_SetBits(GPIOC, GPIO_Pin_12)
-#define reset_low_water_led GPIO_ResetBits(GPIOC, GPIO_Pin_12)
-#define set_low_foam_led 	GPIO_SetBits(GPIOC, GPIO_Pin_11)
-#define reset_low_foam_led 	GPIO_ResetBits(GPIOC, GPIO_Pin_11)
-
 //**********keyboard*****************
 #define is_button_power 	1<<9
 #define is_button_clutch 	1<<8
@@ -123,8 +118,8 @@ extern uint8_t buttons;	//0 - питание
 					//6 - моргалка
 					//7 -
 
-extern uint8_t butt_b[5],		//буфер ШИМ кнопок
-		analog_b[2],	//буфер ШИМ нижних сегментов
+extern uint8_t butt_b[10],		//буфер ШИМ кнопок
+		bkg,								//буфер ШИМ нижних сегментов
 		ind_b[16];		//буфер ШИМ индикаторов
 extern uint8_t rev_p, rev_m;
 

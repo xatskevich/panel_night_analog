@@ -19,12 +19,20 @@ void TIM14_IRQHandler(void) { //1 мс индикация
 	else set_green_led_right;
 	if (pwm_count >= butt_b[4]) reset_green_led_reset; //сброс
 	else set_green_led_reset;
+	if (pwm_count >= butt_b[5]) reset_white_led_power; //питание
+	else set_white_led_power;
+	if (pwm_count >= butt_b[6]) reset_white_led_clutch; //сцепление
+	else set_white_led_clutch;
+	if (pwm_count >= butt_b[7]) reset_white_led_left; //осв лев
+	else set_white_led_left;
+	if (pwm_count >= butt_b[8]) reset_white_led_right; //осв прав
+	else set_white_led_right;
+	if (pwm_count >= butt_b[9]) reset_white_led_reset; //сброс
+	else set_white_led_reset;
 
-//ШИМ нижних сегментов
-	if (pwm_count >= analog_b[0]) reset_low_water_led; //нижний сегмент воды
-	else set_low_water_led;
-	if (pwm_count >= analog_b[1]) reset_low_foam_led; //нижний сегмент воды
-	else set_low_foam_led;
+//ШИМ подсветки
+	if (pwm_count >= bkg) reset_background; //подсветка
+	else set_background;
 
 //ШИМ индикаторов
 	tmp = 0;
@@ -41,13 +49,13 @@ void TIM14_IRQHandler(void) { //1 мс индикация
 
 }
 
-void TIM16_IRQHandler(void) { //40мс кнопки
+void TIM16_IRQHandler(void) { //30мс кнопки
 	uint16_t i, tmp, temp;
 
 	TIM16->SR &= ~TIM_SR_UIF; //сброс флага
 
-//моргалка ~1c
-	if (++blink_cnt == 20) {
+//моргалка ~0.75c
+	if (++blink_cnt == 25) {
 		blink_cnt = 0;
 		blink ^= 1;
 	}
@@ -72,8 +80,12 @@ void TIM16_IRQHandler(void) { //40мс кнопки
 
 //изменение скважности ШИМ кнопок
 	tmp = buttons;
+	if((tmp & 1) == 0) tmp |= 0x20;	//если питание выключено, белая подсветка кнопки
+	if(power_up){
+		for(i = 1; i < 5; i++) if((tmp & (1 << i)) == 0) tmp |= 1 << (i+5);
+	}
 	if(blink == 0) tmp &= ~0x10;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 10; i++) {
 		if (tmp & (1 << i)) {
 			if (butt_b[i] < 8) butt_b[i]++;
 		} else {
@@ -81,28 +93,24 @@ void TIM16_IRQHandler(void) { //40мс кнопки
 		}
 	}
 
-//изменение скважности ШИМ нижних сегментов
-	if ((water.out == 0) && (w_morg == 0) && (blink) && (power_up)) {						//для воды
-		if (analog_b[0] < 8) analog_b[0]++;
+	//ШИМ подсветки
+	if(power_up){
+		if(bkg < 8) bkg++;
 	} else {
-		if (analog_b[0] > 0) analog_b[0]--;
-	}
-
-	if ((foam.out == 0) && (f_morg == 0) && (blink) && (power_up)) {						//для пены
-		if (analog_b[1] < 8) analog_b[1]++;
-	} else {
-		if (analog_b[1] > 0) analog_b[1]--;
+		if(bkg > 0) bkg--;
 	}
 
 //изменение скважности ШИМ индикаторов
 	tmp = 0;
 	temp = 0;
-	if (((water.out) || (foam.out) || (w_morg) || (f_morg)) && (power_up)) {
-		i = foam.out;				//вода, отсекаем нижний сегмент
+	if (power_up) {
+		i = foam.out;				//пена
 		if(f_morg) i = f_morg & 0xF; 			//если есть моргание шкалой
+		if((foam.out == 0) && (blink)) i = 1;		//если уровень =0, моргаем нижним сегментом
 		while (i--) temp = (temp>>1) | 0x8000;
-		i = water.out;				//пена, отсекаем нижний сегмент
+		i = water.out;				//вода
 		if(w_morg) i = w_morg & 0xF;			//если есть моргание шкалой
+		if((water.out == 0) && (blink)) i = 1;		//если уровень =0, моргаем нижним сегментом
 		while (i--) tmp = (tmp<<1) | 1;
 		tmp |= temp;
 	}
@@ -128,10 +136,10 @@ void TIM16_IRQHandler(void) { //40мс кнопки
 				is_idle = 0;
 				if (to_revs < 18000) to_revs += 160; //добавить оборотов
 				if (to_revs > 18000) to_revs = 18000;
-				rev_p = 80; //задержка при долгом нажатии клавиши
+				rev_p = 64; //задержка при долгом нажатии клавиши
 			}
 			if (rev_p == 0) {
-				if (to_revs < 18000) to_revs += 16; //если задержка прошла, увеличить обороты
+				if (to_revs < 18000) to_revs += 24; //если задержка прошла, увеличить обороты
 			} else {
 				rev_p--;
 			}
@@ -150,10 +158,10 @@ void TIM16_IRQHandler(void) { //40мс кнопки
 					to_revs = idle;
 					//is_idle = 1;
 				}
-				rev_m = 80; //задержка при долгом нажатии клавиши
+				rev_m = 64; //задержка при долгом нажатии клавиши
 			}
 			if (rev_m == 0) {
-				if (to_revs > idle) to_revs -= 16; //если задержка прошла, уменьшить обороты
+				if (to_revs > idle) to_revs -= 24; //если задержка прошла, уменьшить обороты
 				if (to_revs <= idle) {
 					to_revs = idle;
 					//is_idle = 1;
@@ -456,7 +464,7 @@ void Init_Timer() {
 
 	//таймер кнопок
 	TIM16->PSC = sys_clock / 100 - 1;
-	TIM16->ARR = 3300; //период 33 мс
+	TIM16->ARR = 3000; //период 30 мс
 	TIM16->DIER |= TIM_DIER_UIE;
 	TIM16->CR1 |= TIM_CR1_CEN;
 
