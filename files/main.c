@@ -50,13 +50,14 @@ int main(void)
 {
 	uint32_t temp;
 
-	//Init_IWDG();			//
+	Init_IWDG();			//
 
 	//начальные установки для тока
-	water.min=45;
-	foam.min=45;
-	water.max=150;
-	foam.max=70;	//*/
+	water.min = 45;
+	foam.min = 45;
+	water.max = 150;
+	foam.max = 70;	
+	pto_address = 0x24;
 
 	FLASH->KEYR = 0x45670123;
 	FLASH->KEYR = 0xCDEF89AB;

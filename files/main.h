@@ -18,7 +18,7 @@
 #include "timer.h"
 
 #define sys_clock 48000
-#define idle 6200
+#define idle 5000
 #define koef_k 9200
 
 #define set_strobe 		GPIO_SetBits(GPIOC, GPIO_Pin_6);		//строб записи в регистр
