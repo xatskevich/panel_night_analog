@@ -132,10 +132,13 @@ void TIM16_IRQHandler(void) { //30мс кнопки
 		set_out_inc;
 		if ((rpm) && (power_up)) { //есть питание и обороты
 			if (temp & is_button_inc) { //если клавиша только нажата
-				if (is_idle == 1) to_revs = idle - 160;
-				is_idle = 0;
-				if (to_revs < 18000) to_revs += 160; //добавить оборотов
-				if (to_revs > 18000) to_revs = 18000;
+				if (is_idle == 1){	//если был хх
+					to_revs = rpm;		//начало управления с текущих оборотов
+					is_idle = 0;
+				} else {		
+					if (to_revs < 18000) to_revs += 160; //добавить оборотов
+					if (to_revs > 18000) to_revs = 18000;
+				}
 				rev_p = 42; //задержка при долгом нажатии клавиши
 			}
 			if (rev_p == 0) {
@@ -156,7 +159,6 @@ void TIM16_IRQHandler(void) { //30мс кнопки
 				if (to_revs > idle) to_revs -= 160; //убавить оборотов
 				if (to_revs < idle) {
 					to_revs = idle;
-					//is_idle = 1;
 				}
 				rev_m = 42; //задержка при долгом нажатии клавиши
 			}
@@ -164,7 +166,6 @@ void TIM16_IRQHandler(void) { //30мс кнопки
 				if (to_revs > idle) to_revs -= 24; //если задержка прошла, уменьшить обороты
 				if (to_revs <= idle) {
 					to_revs = idle;
-					//is_idle = 1;
 				}
 			} else {
 				rev_m--;
@@ -256,13 +257,9 @@ void TIM16_IRQHandler(void) { //30мс кнопки
 	if ((temp & is_button_reset) && (tmp & is_button_reset) && (power_up)) {
 		buttons ^= 0x10;
 		if (buttons & 0x10) { //клавиша активна
-			//rpm_buf = to_revs;
 			is_idle = 1;
 			to_revs = idle;
-		} else {
-			//is_idle = 0;
-			//to_revs = rpm_buf;
-		}
+		} 
 	}
 
 //проверка калибровки
